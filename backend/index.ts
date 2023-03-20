@@ -1,10 +1,11 @@
 import express from 'express';
 import expressWs from 'express-ws';
 import cors from 'cors';
-import {ActiveConnections, IncomingMessage, IUserMutation} from "./types";
-import mongoose from "mongoose";
+import {ActiveConnections, IncomingMessage, IUser, IUserMutation, MessageType} from "./types";
+import mongoose, {HydratedDocument} from "mongoose";
 import config from "./config";
 import User from "./models/User";
+import Message from "./models/Message";
 
 const crypto = require('crypto');
 const app = express();
@@ -37,32 +38,33 @@ router.ws('/chat', (ws) => {
 	ws.on('message', async (msg) => {
 		const decodedMessage = JSON.parse(msg.toString()) as IncomingMessage;
 		switch (decodedMessage.type) {
+
 			case 'LOGIN':
-			try{
-				const login = decodedMessage.payload as IUserMutation;
-				const user = await User.findOne({ username: login.username});
-				if (!user) {
-					ws.send(JSON.stringify({ error: "Username not found" }));
+				try{
+					const login = decodedMessage.payload as IUserMutation;
+					const user = await User.findOne({ username: login.username});
+					if (!user) {
+						ws.send(JSON.stringify({ error: "Username not found" }));
+						break;
+					}
+					const isMatch = await user.checkPassword(login.password);
+					if (!isMatch) {
+						ws.send(JSON.stringify({ error: "Password is wrong" }));
+						break;
+					}
+					user.generateToken();
+					await user.save();
+					ws.send(JSON.stringify({ message: "Username and password correct!", user }));
+					if (user.token){
+						delete activeConnections[id];
+						activeConnections[user.username] = ws;
+						console.log(activeConnections)
+					}
+					break;
+				} catch (e){
+					ws.send(JSON.stringify(e));
 					break;
 				}
-				const isMatch = await user.checkPassword(login.password);
-				if (!isMatch) {
-					ws.send(JSON.stringify({ error: "Password is wrong" }));
-					break;
-				}
-				user.generateToken();
-				await user.save();
-				ws.send(JSON.stringify({ message: "Username and password correct!", user }));
-				if (user.token){
-					delete activeConnections[id];
-					activeConnections[user.username] = ws;
-					console.log(activeConnections)
-				}
-				break;
-			} catch (e){
-				ws.send(JSON.stringify(e));
-				break;
-			}
 
 			case 'REGISTRATION':
 				const register = decodedMessage.payload as IUserMutation;
@@ -74,19 +76,61 @@ router.ws('/chat', (ws) => {
 					});
 					user.generateToken();
 					await user.save();
-					 ws.send(JSON.stringify({message: "registration complete!", user}));
+					ws.send(JSON.stringify({message: "registration complete!", user}));
 				} catch (error) {
-					 ws.send(JSON.stringify(error));
+					ws.send(JSON.stringify(error));
 				}
 				break;
 			case 'SEND_MESSAGE':
-				Object.keys(activeConnections).forEach(connId => {
-					const conn = activeConnections[connId];
-					conn.send(JSON.stringify({
+				try {
+					const messagePayload = decodedMessage.payload as MessageType;
+					const message = new Message({
+						author: messagePayload.author,
+						text: messagePayload.text,
+					})
+					await message.save();
+					Object.keys(activeConnections).forEach(connId => {
+						const conn = activeConnections[connId];
+						conn.send(JSON.stringify({
+							type: 'NEW_MESSAGE',
+							payload: decodedMessage.payload,
+						}));
+					});
+				} catch (error) {
+					ws.send(JSON.stringify(error));
+				}
+				break;
+			case 'SEND_WHISPER':
+				try {
+					const messagePayload = decodedMessage.payload as MessageType;
+					const message = new Message({
+						author: messagePayload.author,
+						text: messagePayload.text,
+						type: messagePayload.type,
+						to: messagePayload.to,
+					})
+					await message.save();
+					const poster = await User.findOne({_id: messagePayload.author}) as HydratedDocument<IUser>;
+					const getter = await User.findOne({_id: messagePayload.to}) as HydratedDocument<IUser>;
+					activeConnections[poster.username].send(JSON.stringify({
 						type: 'NEW_MESSAGE',
-						payload: decodedMessage.payload,
-					}));
-				});
+						payload: {
+							author: poster.username,
+							text: messagePayload.text,
+							to: getter.username
+						},
+					}))
+					activeConnections[getter.username].send(JSON.stringify({
+						type: 'NEW_MESSAGE',
+						payload: {
+							author: poster.username,
+							text: messagePayload.text,
+							to: getter.username
+						},
+					}))
+				} catch (error) {
+					ws.send(JSON.stringify(error));
+				}
 				break;
 			default:
 				console.log('Unknown message type:', decodedMessage.type);
