@@ -21,7 +21,7 @@ const UserSchema = new Schema<IUser, UserModel, IUserMethods>({
 				username: string
 			): Promise<boolean> {
 				if (!this.isModified("username")) return true;
-				const user: HydratedDocument<IUser> | null = await User.findOne({
+				const user = await User.findOne({
 					username
 					});
 				return !user;

@@ -6,7 +6,7 @@ export interface ActiveConnections {
 
 export interface IncomingMessage {
 	type: string;
-	payload: string | IUserMutation;
+	payload: string | IUserMutation | MessageType;
 }
 
 export interface IUser {
@@ -15,6 +15,13 @@ export interface IUser {
 	token: string;
 	role: string;
 	displayName: string;
+}
+
+export interface MessageType {
+	type: string;
+	text: string;
+	author: string;
+	to?: string;
 }
 
 export type IUserMutation = Omit<IUser, 'token' | 'role'>
