@@ -1,6 +1,6 @@
 export interface Message {
-	sender: string;
-	message: string;
+	author: IUser;
+	text: string;
 }
 
 export interface IncomingMessage {
@@ -22,6 +22,7 @@ export interface RegisterMutation {
 export type LoginType = Omit<RegisterMutation, 'displayName'>
 
 export interface IUser {
+	_id: string;
 	username: string;
 	password: string;
 	token: string;
