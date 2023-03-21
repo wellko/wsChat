@@ -15,6 +15,7 @@ export interface IUser {
 	token: string;
 	role: string;
 	displayName: string;
+	online: boolean;
 }
 
 export interface MessageType {
