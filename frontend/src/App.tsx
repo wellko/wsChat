@@ -1,17 +1,25 @@
 import {useEffect, useRef, useState} from "react";
-import {IncomingMessage, Message} from "./types";
+import {IUser, LoginType, Message, RegisterMutation} from "./types";
+import Register from "./components/Register";
 
 function App() {
   const ws = useRef<WebSocket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [user,setUSer] = useState<IUser | null>( null);
+  const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
     ws.current = new WebSocket('ws://localhost:8000/chat');
     ws.current.onclose = () => console.log("ws closed");
     ws.current.onmessage = event => {
-      const decodedMessage = JSON.parse(event.data) as IncomingMessage;
+      const decodedMessage = JSON.parse(event.data);
       if (decodedMessage.type === 'NEW_MESSAGE') {
+        decodedMessage.payload as Message;
         setMessages((messages) => [...messages, decodedMessage.payload]);
+      }
+      if (decodedMessage.type === 'LOGIN') {
+        decodedMessage.payload as IUser;
+        setUSer(decodedMessage.payload);
       }
     };
 
@@ -21,39 +29,31 @@ function App() {
       }
     }
   }, []);
+
+  const registration = (arg: RegisterMutation) => {
+    if (!ws.current)
+      return;
+   ws.current.send(JSON.stringify({
+     type: 'REGISTRATION',
+     payload: arg
+   }));
+  }
+
+  const login = (arg: LoginType) => {
+    if (!ws.current)
+      return;
+    ws.current.send(JSON.stringify({
+      type: 'LOGIN',
+      payload: arg
+    }));
+  }
+
+  const loginChange = () => {
+    setRegistered(!registered);
+  }
   return (
     <div className="App">
-<button onClick={() => {
-  ws.current?.send(JSON.stringify({
-    type: 'LOGIN',
-    payload: {
-      username: 'me',
-      password: 'pew',
-    }
-  }))
-}}>login 1</button>
-
-      <button onClick={() => {
-        ws.current?.send(JSON.stringify({
-          type: 'LOGIN',
-          payload: {
-            username: 'pawpaw',
-            password: 'paw',
-          }
-        }))
-      }}>login 2</button>
-
-      <button onClick={() => {
-        ws.current?.send(JSON.stringify({
-          type: 'SEND_WHISPER',
-          payload: {
-            author: '641745f1342e03ab5cca72e1',
-            text: 'paw',
-            type: 'whisper',
-            to: '64189227cdca88543f931096'
-          }
-        }))
-      }}>message</button>
+      {user? 'HERE' : <Register onRegister={registration} onLoginChange={loginChange}/>}
     </div>
 
   )

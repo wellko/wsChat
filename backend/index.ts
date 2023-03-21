@@ -54,7 +54,10 @@ router.ws('/chat', (ws) => {
 					}
 					user.generateToken();
 					await user.save();
-					ws.send(JSON.stringify({ message: "Username and password correct!", user }));
+					ws.send(JSON.stringify({
+						type: 'LOGIN',
+						payload: user
+					}));
 					if (user.token){
 						delete activeConnections[id];
 						activeConnections[user.username] = ws;
@@ -76,7 +79,10 @@ router.ws('/chat', (ws) => {
 					});
 					user.generateToken();
 					await user.save();
-					ws.send(JSON.stringify({message: "registration complete!", user}));
+					ws.send(JSON.stringify({
+						type: 'LOGIN',
+						payload: user
+					}));
 				} catch (error) {
 					ws.send(JSON.stringify(error));
 				}
