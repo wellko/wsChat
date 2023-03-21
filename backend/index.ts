@@ -30,6 +30,14 @@ router.ws('/chat', async (ws) => {
     const messages = await Message.find().sort({_id: -1}).limit(30).populate('author', 'displayName');
     ws.on('close', () => {
         console.log('client disconnected! id=', id);
+        User.findOneAndUpdate({username: id}, {online: false})
+        Object.keys(activeConnections).forEach(connId => {
+            const conn = activeConnections[connId];
+            conn.send(JSON.stringify({
+                type: 'OFFLINE',
+                payload: id
+            }));
+        });
         delete activeConnections[id];
     });
     ws.on('message', async (msg) => {
@@ -56,7 +64,8 @@ router.ws('/chat', async (ws) => {
                         payload: user
                     }));
                     delete activeConnections[id];
-                    activeConnections[user.username] = ws;
+                    id = user.username;
+                    activeConnections[id] = ws;
                     ws.send(JSON.stringify({
                         type: 'EXISTING_MESSAGES',
                         payload: messages,
@@ -110,6 +119,7 @@ router.ws('/chat', async (ws) => {
                         payload: user
                     }));
                     delete activeConnections[id];
+                    id = user.username;
                     activeConnections[user.username] = ws;
                     ws.send(JSON.stringify({
                         type: 'EXISTING_MESSAGES',
