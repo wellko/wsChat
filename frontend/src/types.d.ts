@@ -1,6 +1,7 @@
 export interface Message {
 	author: IUser;
 	text: string;
+	_id: string;
 }
 
 export interface IncomingMessage {

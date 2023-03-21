@@ -10,15 +10,16 @@ import {
 } from '@mui/material';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import {LoginType,} from "../types";
-import {Alert} from "@mui/lab";
+import {Alert} from "@mui/material";
 
 interface props {
     onLogin : (state: LoginType) => void;
     onLoginChange: () => void;
     error: string | null;
+    resetError: () => void;
 }
 
-const Login:React.FC<props> = ({onLogin, onLoginChange, error}) => {
+const Login:React.FC<props> = ({onLogin, onLoginChange, error,resetError}) => {
     const [state, setState] = useState<LoginType>({
         username: '',
         password: '',
@@ -26,11 +27,12 @@ const Login:React.FC<props> = ({onLogin, onLoginChange, error}) => {
     const inputChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
         setState((prevState) => ({ ...prevState, [name]: value }));
+        resetError();
     };
 
     const submitFormHandler = async (event: React.FormEvent) => {
         event.preventDefault();
-        onLogin(state)
+        onLogin(state);
     };
 
     return (
