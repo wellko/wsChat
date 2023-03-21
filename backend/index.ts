@@ -23,14 +23,11 @@ const run = async () => {
 	});
 };
 
-router.ws('/chat', (ws) => {
+router.ws('/chat', async (ws) => {
 	let id = crypto.randomUUID();
 	console.log('client connected! id=', id);
 	activeConnections[id] = ws;
-	ws.send(JSON.stringify({
-		type: 'NEW_MESSAGES',
-		payload: 'hello',
-	}));
+	const messages = await Message.find().sort({_id: -1}).limit(30)
 	ws.on('close', () => {
 		console.log('client disconnected! id=', id);
 		delete activeConnections[id];
@@ -44,12 +41,12 @@ router.ws('/chat', (ws) => {
 					const login = decodedMessage.payload as IUserMutation;
 					const user = await User.findOne({ username: login.username});
 					if (!user) {
-						ws.send(JSON.stringify({ error: "Username not found" }));
+						ws.send(JSON.stringify({type: 'ERROR' ,payload: "Username not found" }));
 						break;
 					}
 					const isMatch = await user.checkPassword(login.password);
 					if (!isMatch) {
-						ws.send(JSON.stringify({ error: "Password is wrong" }));
+						ws.send(JSON.stringify({type: 'ERROR' ,payload: "Password is wrong" }));
 						break;
 					}
 					user.generateToken();
@@ -58,11 +55,12 @@ router.ws('/chat', (ws) => {
 						type: 'LOGIN',
 						payload: user
 					}));
-					if (user.token){
 						delete activeConnections[id];
 						activeConnections[user.username] = ws;
-						console.log(activeConnections)
-					}
+						ws.send(JSON.stringify({
+							type: 'EXISTING_MESSAGES',
+							payload: messages,
+						}));
 					break;
 				} catch (e){
 					ws.send(JSON.stringify(e));

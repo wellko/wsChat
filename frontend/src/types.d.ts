@@ -28,3 +28,7 @@ export interface IUser {
 	role: string;
 	displayName: string;
 }
+
+export interface errorType {
+	error: string;
+}

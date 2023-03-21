@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Avatar, Box, Button, CircularProgress, Container, Grid, TextField, Typography } from '@mui/material';
+import { Avatar, Box, Button, Container, Grid, TextField, Typography } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import {RegisterMutation} from "../types";
 
@@ -9,7 +9,6 @@ interface props {
 }
 
 const Register: React.FC<props> = ({onRegister, onLoginChange}) => {
-	const [loading, setLoading] = useState(false);
 
 	const [state, setState] = useState<RegisterMutation>({
 		username: '',
@@ -86,7 +85,7 @@ const Register: React.FC<props> = ({onRegister, onLoginChange}) => {
 						</Grid>
 					</Grid>
 					<Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
-						{loading ? <CircularProgress /> : 'Sign Up'}
+						Sign Up
 					</Button>
 					<Grid container justifyContent="flex-end">
 						<Grid item>
