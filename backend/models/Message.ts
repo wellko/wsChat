@@ -1,4 +1,4 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, {Types} from "mongoose";
 import User from "./User";
 
 
@@ -17,20 +17,6 @@ const MessageSchema = new Schema({
 			message: "User not found!",
 		},
 	},
-	type:{
-		type: String,
-		required: true,
-		default: "simple",
-		enum: ["simple", "whisper"]
-	},
-	to: {
-		type: Schema.Types.ObjectId,
-		ref: "User",
-		validate: {
-			validator: async (value: Types.ObjectId) => User.findById(value),
-			message: "User not found!",
-		},
-	}
 });
 
 const Message = mongoose.model("Message", MessageSchema);

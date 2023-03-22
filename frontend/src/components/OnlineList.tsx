@@ -1,5 +1,5 @@
 import React from 'react';
-import {List, ListItem} from "@mui/material";
+import {Box, List, ListItem, Paper, Typography} from "@mui/material";
 import {IUser} from "../types";
 
 interface props{
@@ -7,9 +7,14 @@ interface props{
 }
 const OnlineList:React.FC<props> = ({users}) => {
     return (
-        <List>
-            {users.map(el=> <ListItem key={Math.random()}>{el.displayName}</ListItem>)}
-        </List>
+            <Paper elevation={4}>
+                <Box overflow='scroll'>
+                <Typography variant='h3'>Online:</Typography>
+                <List>
+                    {users.map(el=> <ListItem key={Math.random()}>{el.displayName}</ListItem>)}
+                </List>
+                </Box>
+            </Paper>
     );
 };
 

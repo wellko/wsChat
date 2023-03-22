@@ -1,8 +1,8 @@
 import express from 'express';
 import expressWs from 'express-ws';
 import cors from 'cors';
-import {ActiveConnections, IncomingMessage, IUser, IUserMutation, MessageType} from "./types";
-import mongoose, {HydratedDocument} from "mongoose";
+import {ActiveConnections, IncomingMessage, IUserMutation, MessageType} from "./types";
+import mongoose from "mongoose";
 import config from "./config";
 import User from "./models/User";
 import Message from "./models/Message";
@@ -167,38 +167,6 @@ router.ws('/chat', async (ws) => {
 							}
 						}));
 					});
-				} catch (error) {
-					ws.send(JSON.stringify(error));
-				}
-				break;
-			case 'SEND_WHISPER':
-				try {
-					const messagePayload = decodedMessage.payload as MessageType;
-					const message = new Message({
-						author: messagePayload.author,
-						text: messagePayload.text,
-						type: messagePayload.type,
-						to: messagePayload.to,
-					})
-					await message.save();
-					const poster = await User.findOne({_id: messagePayload.author}) as HydratedDocument<IUser>;
-					const getter = await User.findOne({_id: messagePayload.to}) as HydratedDocument<IUser>;
-					activeConnections[poster.username].send(JSON.stringify({
-						type: 'NEW_MESSAGE',
-						payload: {
-							author: poster.displayName,
-							text: messagePayload.text,
-							to: getter.displayName
-						},
-					}))
-					activeConnections[getter.username].send(JSON.stringify({
-						type: 'NEW_MESSAGE',
-						payload: {
-							author: poster.displayName,
-							text: messagePayload.text,
-							to: getter.displayName
-						},
-					}))
 				} catch (error) {
 					ws.send(JSON.stringify(error));
 				}
